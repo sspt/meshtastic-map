@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Nodes Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 100vh;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script>
+        var map = L.map('map').setView([0, 0], 2);  // Initialize map
+
+        // Add OpenStreetMap tile layer to the map
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        function format_date(date) {
+            return new Date(date).toISOString();
+        }
+        // Fetch nodes and add pins to the map
+        function fetchNodes() {
+    axios.get('/nodes')
+        .then(function (response) {
+            // Clear existing markers
+            if (window.markers) {
+                window.markers.forEach(marker => map.removeLayer(marker));
+            }
+            window.markers = [];
+
+            // Create a new bounds object
+            var bounds = L.latLngBounds();
+
+            // Add new markers
+            Object.values(response.data).forEach(function (node) {
+                if ((node.lat == null || node.lon == null) || (node.lat == 0 && node.lon == 0)) return;
+                var marker = L.marker([node.lat, node.lon]).addTo(map)
+                    .bindPopup(`<b>Id:</b> ${node.name ? node.name : node.id}<br><b>Altitude:</b> ${node.alt}<br><b>Last seen:</b> ${format_date(node.last_seen)}`);
+                window.markers.push(marker);
+
+                // Extend the bounds to include the new marker's location
+                bounds.extend(marker.getLatLng());
+            });
+
+            // Adjust the map view to include all markers
+            map.fitBounds(bounds);
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
+}
+
+// Fetch nodes immediately on page load
+fetchNodes();
+
+// Then fetch nodes every minute
+setInterval(fetchNodes, 60000);
+    </script>
+</body>
+
+</html>

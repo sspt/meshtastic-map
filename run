@@ -1,0 +1,1 @@
+docker run -e MQTT_SERVER="mqtt.meshtastic.pt" -e  MQTT_USERNAME="meshdev" -e MQTT_PASSWORD="large4cats" -p 4000:80 mesh-map
